@@ -21,13 +21,15 @@ prompt_load_order = ['prompt_role',
 
 class ChatGPT:
     def __init__(self, credentials, prompt_load_order):
-        openai.api_key = credentials["chatengine"]["AZURE_OPENAI_KEY"]
-        openai.api_base = credentials["chatengine"]["AZURE_OPENAI_ENDPOINT"]
-        openai.api_type = 'azure'
-        openai.api_version = '2022-12-01'
+        openai.api_key = "sk-hreYr15pupx3kkOd3R8X8D7Qt0V88Mni2XvuNM8awFkg0ruU"
+        openai.api_base = "https://api.chatanywhere.com.cn"
+        # openai.api_key = credentials["chatengine"]["AZURE_OPENAI_KEY"]
+        # openai.api_base = credentials["chatengine"]["AZURE_OPENAI_ENDPOINT"]
+        # openai.api_type = 'azure'
+        # openai.api_version = '2022-12-01'
         self.credentials = credentials
         self.messages = []
-        self.max_token_length = 8000
+        self.max_token_length = 4097
         self.max_completion_length = 1000
         self.last_response = None
         self.query = ''
@@ -110,16 +112,16 @@ class ChatGPT:
                 self.instruction = text_base
             self.messages.append({'sender': 'user', 'text': text_base})
 
-        response = openai.Completion.create(
-            engine=deployment_name,
-            prompt=self.create_prompt(),
-            temperature=0.1,
-            max_tokens=self.max_completion_length,
-            top_p=0.5,
-            frequency_penalty=0.0,
-            presence_penalty=0.0,
-            stop=["<|im_end|>"])
-        text = response['choices'][0]['text']
+        prompt = self.create_prompt()
+        response = openai.ChatCompletion.create(
+            # stream=True,
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+            # messages=[{'role'}],
+
+        )
+        # text = response['choices'][0]['text']
+        text = response['choices'][0]['message']['content']
         print(text)
         self.last_response = text
         self.last_response = self.extract_json_part(self.last_response)
@@ -154,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--scenario',
         type=str,
-        required=True,
+        default="shelf",
         help='scenario name (see the code for details)')
     args = parser.parse_args()
     scenario_name = args.scenario
@@ -258,12 +260,15 @@ if __name__ == "__main__":
             user_feedback = input(
                 'user feedback (return empty if satisfied): ')
             if user_feedback == 'q':
+                print('exit')
                 exit()
             if user_feedback != '':
+                print('not empty user feeback')
                 text = aimodel.generate(
                     user_feedback, environment, is_user_feedback=True)
             else:
                 # update the current environment
+                print('update environment')
                 environment = aimodel.environment
                 break
         aimodel.dump_json(f'./out/{scenario_name}/{i}')
