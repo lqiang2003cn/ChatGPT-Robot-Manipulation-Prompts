@@ -18,5 +18,5 @@ The dictionary that you return should be formatted as python dictionary. Follow 
 ```python
 {... your response, which should be a valid python dictionary...}
 ```
-9. Make sure that you output a consistent manipultation as a human. For example, grasping an object should not occur in successive steps.
+9. Make sure that you output a consistent manipulation as a human. For example, grasping an object should not occur in successive steps.
 Adhere to the output format I defined above. Follow the nine rules. Think step by step.

@@ -21,8 +21,6 @@ prompt_load_order = ['prompt_role',
 
 class ChatGPT:
     def __init__(self, credentials, prompt_load_order):
-        openai.api_key = "sk-hreYr15pupx3kkOd3R8X8D7Qt0V88Mni2XvuNM8awFkg0ruU"
-        openai.api_base = "https://api.chatanywhere.com.cn"
         # openai.api_key = credentials["chatengine"]["AZURE_OPENAI_KEY"]
         # openai.api_base = credentials["chatengine"]["AZURE_OPENAI_ENDPOINT"]
         # openai.api_type = 'azure'
