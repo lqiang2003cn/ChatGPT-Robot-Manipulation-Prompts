@@ -310,8 +310,7 @@ class ChatGPT_api:
             self.query = f.read()
 
     def create_prompt(self):
-        prompt = []
-        prompt.append(self.system_message)
+        prompt = [self.system_message]
         for message in self.messages:
             prompt.append(
                 {"role": message['sender'], "content": message['text']})
