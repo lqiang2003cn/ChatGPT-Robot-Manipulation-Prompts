@@ -423,8 +423,7 @@ if __name__ == '__main__':
                 # if api is called within 60 seconds, wait
                 current_time = time.time()
                 if current_time - time_api_called < waittime_sec:
-                    print("waiting for " + str(waittime_sec -
-                          (current_time - time_api_called)) + " seconds...")
+                    print("waiting for " + str(waittime_sec - (current_time - time_api_called)) + " seconds...")
                     time.sleep(waittime_sec - (current_time - time_api_called))
                 aimodel = ChatGPT_api(
                     credentials, prompt_load_order=prompt_load_order)
@@ -439,10 +438,8 @@ if __name__ == '__main__':
                     print("api call failed. retrying...")
                     current_time = time.time()
                     if current_time - time_api_called < waittime_sec:
-                        print("waiting for " + str(waittime_sec -
-                              (current_time - time_api_called)) + " seconds...")
-                        time.sleep(waittime_sec -
-                                   (current_time - time_api_called))
+                        print("waiting for " + str(waittime_sec - (current_time - time_api_called)) + " seconds...")
+                        time.sleep(waittime_sec -(current_time - time_api_called))
                     text = aimodel.generate(
                         "Your return cannot be interpreted as a valid json dictionary. Please reformat your response.",
                         environment,
