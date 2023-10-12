@@ -377,7 +377,7 @@ class ChatGPT_api:
         return self.json_dict
 
 
-def test_execution(comm, script):
+def t_execution(comm, script):
     reset(comm)
     print('Starting scene...')
     comm.add_character('Chars/Male2', initial_room='kitchen')
@@ -394,6 +394,7 @@ def test_execution(comm, script):
 
 if __name__ == '__main__':
     comm = UnityCommunication()
+    comm.reset(0)
     dir_name = "out_task_planning_gpt-3.5-turbo-16k_temp=2.0"
     waittime_sec = 30
     max_trial = 5
@@ -455,11 +456,11 @@ if __name__ == '__main__':
 
             print("self test is running...")
             script = generate_script(text["task_cohesion"]["task_sequence"])
-            user_feedback = test_execution(comm, script)
+            user_feedback = t_execution(comm, script)
             if len(user_feedback) > 0:
                 # VirtualHome sometimes fails to execute the script even if the
                 # script is correct, so retry once just in case.
-                user_feedback = test_execution(comm, script)
+                user_feedback = t_execution(comm, script)
             print('result of self test: ' + user_feedback)
             was_execution_successful = False
             if len(user_feedback) > 0:
