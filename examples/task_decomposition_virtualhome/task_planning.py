@@ -394,7 +394,7 @@ def t_execution(comm, script):
 
 if __name__ == '__main__':
     comm = UnityCommunication()
-    comm.reset(0)
+    comm.reset(1)
     dir_name = "out_task_planning_gpt-3.5-turbo-16k_temp=2.0"
     waittime_sec = 30
     max_trial = 5
@@ -411,12 +411,10 @@ if __name__ == '__main__':
                 scenario = json.load(f)
             instructions = scenario['instructions']
             reference_program = scenario['program']
-            print(
-                f"instructions(scenario_id={scenario_id}): {instructions[0]}")
-            reset(comm)
+            print(f"instructions(scenario_id={scenario_id}): {instructions[0]}")
+            # reset(comm)
             s, graph = comm.environment_graph()
-            environment = populate_environment(
-                graph, extract_objects(reference_program), "kitchen")
+            environment = populate_environment(graph, extract_objects(reference_program), "kitchen")
             scenario_name = 'scenario_' + str(scenario_id)
             if not os.path.exists('./' + dir_name + '/' + scenario_name):
                 os.makedirs('./' + dir_name + '/' + scenario_name)
