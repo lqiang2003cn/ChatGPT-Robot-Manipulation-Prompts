@@ -1,5 +1,6 @@
 import json
 import openai
+import requests
 import tiktoken
 import json
 import os
@@ -8,7 +9,7 @@ import time
 from virtualhome.simulation.unity_simulator.comm_unity import UnityCommunication
 
 enc = tiktoken.get_encoding("cl100k_base")
-with open('../../secrets.json') as f:
+with open('c.json') as f:
     credentials = json.load(f)
 
 dir_system = './system'
@@ -141,7 +142,7 @@ def find_parent_node(graph, node_name, room_name):
                 continue
             if 'Decor' in parent_node['category']:
                 continue
-            #print(parent_node['class_name'], parent_node_id[1])
+            # print(parent_node['class_name'], parent_node_id[1])
             if "<{}_{}>".format(node_name,
                                 node_id) in return_dict[key_to_add].keys():
                 return_dict[key_to_add]["<{}_{}>".format(node_name, node_id)].append(
@@ -182,18 +183,16 @@ def populate_environment(graph, start_objects, start_room):
     while objects_to_check:
         current_object = objects_to_check.pop()
         # print(objects_to_check)
-        if "<{}>".format(current_object) not in environment["objects"] and "<{}>".format(
-                current_object) not in environment["assets"]:
+        if "<{}>".format(current_object) not in environment["objects"] and \
+                "<{}>".format(current_object) not in environment["assets"]:
             # add to the environment
-            if 'GRABBABLE' in id_to_node[int(
-                    current_object.split('_')[-1])]['properties']:
+            if 'GRABBABLE' in id_to_node[int(current_object.split('_')[-1])]['properties']:
                 environment["objects"].append("<{}>".format(current_object))
             else:
                 environment["assets"].append("<{}>".format(current_object))
 
             # find the parent and add the relationship to the environment
-            parent_info = find_parent_node(
-                graph, remove_brackets(current_object), start_room)
+            parent_info = find_parent_node(graph, remove_brackets(current_object), start_room)
             if parent_info is not None:
                 if "object_states" in parent_info:
                     for obj, states in parent_info["object_states"].items():
@@ -203,16 +202,17 @@ def populate_environment(graph, start_objects, start_room):
                         # add the new objects involved in the states to the
                         # list of objects to check
                         for state in states:
-                            involved_object = remove_brackets(
-                                state.split('(')[-1].split(')')[0])
-                            if "<{}>".format(involved_object) not in environment["objects"] and "<{}>".format(
-                                    involved_object) not in environment["assets"]:
+                            involved_object = remove_brackets(state.split('(')[-1].split(')')[0])
+                            if "<{}>".format(involved_object) not in environment["objects"] and \
+                                    "<{}>".format(involved_object) not in environment["assets"]:
                                 objects_to_check.append(involved_object)
                 if "asset_states" in parent_info:
                     for obj, states in parent_info["asset_states"].items():
                         # add states to the environment
-                        environment["asset_states"]["<{}>".format(remove_brackets(obj))] = ["{}(<{}>)".format(
-                            state.split('(')[0], remove_brackets(state.split('(')[-1].split(')')[0])) for state in states]
+                        environment["asset_states"]["<{}>".format(remove_brackets(obj))] = [
+                            "{}(<{}>)".format(state.split('(')[0], remove_brackets(state.split('(')[-1].split(')')[0])) for state
+                            in states
+                        ]
                         # add the new assets involved in the states to the list
                         # of assets to check
                         for state in states:
@@ -276,8 +276,8 @@ def extract_objects(script):
 
 class ChatGPT_api:
     def __init__(self, credentials, prompt_load_order):
-        openai.organization = credentials["openai"]["YOUR_ORG_ID"]
-        openai.api_key = credentials["openai"]["OPENAI_API_KEY"]
+        openai.api_base = credentials["api_base"]
+        openai.api_key = credentials["api_key"]
         self.credentials = credentials
         self.messages = []
         self.max_token_length = 15000  # 4000
@@ -352,18 +352,34 @@ class ChatGPT_api:
                 self.instruction = text_base
             self.messages.append({'sender': 'user', 'text': text_base})
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-16k",
-            messages=self.create_prompt(),
-            temperature=2.0,
-            max_tokens=self.max_completion_length,
-            top_p=0.5,
-            frequency_penalty=0.0,
-            presence_penalty=0.0)
-        text = response['choices'][0].message.content
+        # response = openai.ChatCompletion.create(
+        #     model="gpt-3.5-turbo-16k-0613",
+        #     messages=self.create_prompt(),
+        #     temperature=2.0,
+        #     max_tokens=self.max_completion_length,
+        #     top_p=0.5,
+        #     frequency_penalty=0.0,
+        #     presence_penalty=0.0)
+
+        json_data = {
+            "model": "gpt-3.5-turbo-16k-0613",
+            'messages': self.create_prompt(),
+            "temperature": 2.0,
+            "max_tokens": self.max_completion_length,
+            "top_p": 0.5,
+            "frequency_penalty": 0.0,
+            "presence_penalty": 0.0,
+        }
+        headers = {"Authorization": "Bearer " + self.credentials["api_key"]}
+        response = requests.post(
+            self.credentials["api_base"],
+            headers=headers,
+            json=json_data
+        ).json()
+
+        text = response['choices'][0]['message']['content']
         self.last_response_raw = text
-        self.messages.append(
-            {"sender": "assistant", "text": self.last_response_raw})
+        self.messages.append({"sender": "assistant", "text": self.last_response_raw})
         # analyze the response
         self.last_response = text
         self.last_response = self.extract_json_part(self.last_response)
@@ -387,14 +403,14 @@ def t_execution(comm, script):
         ret = comm.render_script([script_atom], frame_rate=10, recording=True)
         if ret[0] is False:
             feedback = "You are wrong! Modify your answer. The following line failed in a simulator: " + task + "\n" + \
-                "The verb {" + task_atom + "} is not applicable to the object(s). Refer to \'HUMAN ACTION LIST\' in my instruction."
+                       "The verb {" + task_atom + "} is not applicable to the object(s). Refer to \'HUMAN ACTION LIST\' in my instruction."
             return feedback
     return ""
 
 
 if __name__ == '__main__':
     comm = UnityCommunication()
-    comm.reset(1)
+    comm.reset(0)
     dir_name = "out_task_planning_gpt-3.5-turbo-16k_temp=2.0"
     waittime_sec = 30
     max_trial = 5
@@ -424,12 +440,8 @@ if __name__ == '__main__':
                 if current_time - time_api_called < waittime_sec:
                     print("waiting for " + str(waittime_sec - (current_time - time_api_called)) + " seconds...")
                     time.sleep(waittime_sec - (current_time - time_api_called))
-                aimodel = ChatGPT_api(
-                    credentials, prompt_load_order=prompt_load_order)
-                text = aimodel.generate(
-                    instructions[0],
-                    environment,
-                    is_user_feedback=False)
+                aimodel = ChatGPT_api(credentials, prompt_load_order=prompt_load_order)
+                text = aimodel.generate(instructions[0], environment, is_user_feedback=False)
                 time_api_called = time.time()
                 if text is not None:
                     break
@@ -438,7 +450,7 @@ if __name__ == '__main__':
                     current_time = time.time()
                     if current_time - time_api_called < waittime_sec:
                         print("waiting for " + str(waittime_sec - (current_time - time_api_called)) + " seconds...")
-                        time.sleep(waittime_sec -(current_time - time_api_called))
+                        time.sleep(waittime_sec - (current_time - time_api_called))
                     text = aimodel.generate(
                         "Your return cannot be interpreted as a valid json dictionary. Please reformat your response.",
                         environment,

@@ -1,3 +1,5 @@
-openai
-tiktoken
+openai~=0.28.0
+tiktoken~=0.5.1
 virtualhome==2.3.0
+opencv-python~=4.5.1.48
+requests~=2.31.0
