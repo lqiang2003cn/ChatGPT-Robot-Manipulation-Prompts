@@ -109,7 +109,9 @@ class ChatGPT:
 
     def call_gpt(self, json_data):
         headers = {"Authorization": "Bearer " + self.credentials["api_key"]}
-        response = requests.post(
+        session = requests.Session()
+        session.trust_env = False
+        response = session.post(
             self.credentials["api_base"],
             headers=headers,
             json=json_data
