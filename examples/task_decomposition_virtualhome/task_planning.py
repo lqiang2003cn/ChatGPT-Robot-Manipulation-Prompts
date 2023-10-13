@@ -1,11 +1,10 @@
 import json
-import openai
-import requests
-import tiktoken
-import json
 import os
 import re
 import time
+
+import requests
+import tiktoken
 from virtualhome.simulation.unity_simulator.comm_unity import UnityCommunication
 
 enc = tiktoken.get_encoding("cl100k_base")
@@ -276,8 +275,6 @@ def extract_objects(script):
 
 class ChatGPT_api:
     def __init__(self, credentials, prompt_load_order):
-        openai.api_base = credentials["api_base"]
-        openai.api_key = credentials["api_key"]
         self.credentials = credentials
         self.messages = []
         self.max_token_length = 15000  # 4000
@@ -352,15 +349,6 @@ class ChatGPT_api:
                 self.instruction = text_base
             self.messages.append({'sender': 'user', 'text': text_base})
 
-        # response = openai.ChatCompletion.create(
-        #     model="gpt-3.5-turbo-16k-0613",
-        #     messages=self.create_prompt(),
-        #     temperature=2.0,
-        #     max_tokens=self.max_completion_length,
-        #     top_p=0.5,
-        #     frequency_penalty=0.0,
-        #     presence_penalty=0.0)
-
         json_data = {
             "model": "gpt-3.5-turbo-16k-0613",
             'messages': self.create_prompt(),
@@ -371,7 +359,9 @@ class ChatGPT_api:
             "presence_penalty": 0.0,
         }
         headers = {"Authorization": "Bearer " + self.credentials["api_key"]}
-        response = requests.post(
+        session = requests.Session()
+        # session.trust_env = False
+        response = session.post(
             self.credentials["api_base"],
             headers=headers,
             json=json_data
@@ -430,6 +420,7 @@ if __name__ == '__main__':
             print(f"instructions(scenario_id={scenario_id}): {instructions[0]}")
             # reset(comm)
             s, graph = comm.environment_graph()
+
             environment = populate_environment(graph, extract_objects(reference_program), "kitchen")
             scenario_name = 'scenario_' + str(scenario_id)
             if not os.path.exists('./' + dir_name + '/' + scenario_name):
