@@ -1,14 +1,13 @@
 import json
-import openai
-import tiktoken
-import json
 import os
 import re
 import time
+
+import tiktoken
 from virtualhome.simulation.unity_simulator.comm_unity import UnityCommunication
 
 enc = tiktoken.get_encoding("cl100k_base")
-with open('../../secrets.json') as f:
+with open('c.json') as f:
     credentials = json.load(f)
 
 dir_system = './system'
@@ -276,8 +275,6 @@ def extract_objects(script):
 
 class ChatGPT_api:
     def __init__(self, credentials, prompt_load_order):
-        openai.organization = credentials["openai"]["YOUR_ORG_ID"]
-        openai.api_key = credentials["openai"]["OPENAI_API_KEY"]
         self.credentials = credentials
         self.messages = []
         self.max_token_length = 15000  # 4000

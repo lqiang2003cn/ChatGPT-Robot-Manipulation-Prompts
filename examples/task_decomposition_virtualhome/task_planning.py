@@ -116,9 +116,7 @@ def find_parent_node(graph, node_name, room_name):
             return None
         node_ids = name_to_id[node_name]
         # print(node_ids)
-        node_ids = [
-            node_id for node_id in node_ids if which_room(
-                graph, node_id) == room_name]
+        node_ids = [node_id for node_id in node_ids if which_room(graph, node_id) == room_name]
         # print(node_ids)
     return_dict = {"object_states": {}, "asset_states": {}}
     for node_id in node_ids:
@@ -142,13 +140,13 @@ def find_parent_node(graph, node_name, room_name):
             if 'Decor' in parent_node['category']:
                 continue
             # print(parent_node['class_name'], parent_node_id[1])
-            if "<{}_{}>".format(node_name,
-                                node_id) in return_dict[key_to_add].keys():
+            if "<{}_{}>".format(node_name, node_id) in return_dict[key_to_add].keys():
                 return_dict[key_to_add]["<{}_{}>".format(node_name, node_id)].append(
-                    "{}(<{}_{}>)".format(relation_type, parent_node['class_name'], parent_node_id[0]))
+                    "{}(<{}_{}>)".format(relation_type, parent_node['class_name'], parent_node_id[0])
+                )
             else:
-                return_dict[key_to_add]["<{}_{}>".format(node_name, node_id)] = ["{}(<{}_{}>)".format(
-                    relation_type, parent_node['class_name'], parent_node_id[0])]
+                return_dict[key_to_add]["<{}_{}>".format(node_name, node_id)] = \
+                    ["{}(<{}_{}>)".format(relation_type, parent_node['class_name'], parent_node_id[0])]
     return return_dict
 
 
@@ -172,11 +170,9 @@ def populate_environment(graph, start_objects, start_room):
     child_to_parent = {}
     for edge in graph['edges']:
         if edge['from_id'] in child_to_parent.keys():
-            child_to_parent[edge['from_id']].append(
-                (edge['to_id'], edge['relation_type']))
+            child_to_parent[edge['from_id']].append((edge['to_id'], edge['relation_type']))
         else:
-            child_to_parent[edge['from_id']] = [
-                (edge['to_id'], edge['relation_type'])]
+            child_to_parent[edge['from_id']] = [(edge['to_id'], edge['relation_type'])]
     objects_to_check = [remove_brackets(name) for name in start_objects]
 
     while objects_to_check:
@@ -400,7 +396,8 @@ def t_execution(comm, script):
 
 if __name__ == '__main__':
     comm = UnityCommunication()
-    comm.reset(0)
+    # reset(comm, scene_index=1000)
+    comm.reset(1)
     dir_name = "out_task_planning_gpt-3.5-turbo-16k_temp=2.0"
     waittime_sec = 30
     max_trial = 5
@@ -420,7 +417,6 @@ if __name__ == '__main__':
             print(f"instructions(scenario_id={scenario_id}): {instructions[0]}")
             # reset(comm)
             s, graph = comm.environment_graph()
-
             environment = populate_environment(graph, extract_objects(reference_program), "kitchen")
             scenario_name = 'scenario_' + str(scenario_id)
             if not os.path.exists('./' + dir_name + '/' + scenario_name):
