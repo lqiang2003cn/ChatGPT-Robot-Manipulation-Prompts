@@ -397,7 +397,7 @@ def t_execution(comm, script):
 if __name__ == '__main__':
     comm = UnityCommunication()
     # reset(comm, scene_index=1000)
-    comm.reset(1)
+    comm.reset(0)
     dir_name = "out_task_planning_gpt-3.5-turbo-16k_temp=2.0"
     waittime_sec = 30
     max_trial = 5
@@ -417,6 +417,10 @@ if __name__ == '__main__':
             print(f"instructions(scenario_id={scenario_id}): {instructions[0]}")
             # reset(comm)
             s, graph = comm.environment_graph()
+
+            # get info about bread slice
+            breadslice = [node['id'] for node in graph['nodes'] if node['class_name'] == 'breadslice']
+
             environment = populate_environment(graph, extract_objects(reference_program), "kitchen")
             scenario_name = 'scenario_' + str(scenario_id)
             if not os.path.exists('./' + dir_name + '/' + scenario_name):

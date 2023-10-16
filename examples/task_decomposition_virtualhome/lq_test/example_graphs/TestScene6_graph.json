@@ -1,0 +1,25 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "category": "Rooms",
+      "class_name": "bathroom",
+      "prefab_name": "PRE_ROO_Bathroom_01",
+      "bounding_box": {
+        "center": [
+          -1.58884144,
+          1.2499944,
+          -5.488
+        ],
+        "size": [
+          5.50342941,
+          2.50002837,
+          7.50000572
+        ]
+      },
+      "properties": [],
+      "states": []
+    }
+  ],
+  "edges": []
+}

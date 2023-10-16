@@ -37,19 +37,17 @@ fridge_node = [node for node in graph['nodes'] if node['class_name'] == 'fridge'
 fridge_node['states'] = ['OPEN']
 
 # create a new node
-# new_node = {
-#     'id': 1000,
-#     'class_name': 'salmon',
-#     'states': []
-# }
+new_node = {
+    'id': 1000,
+    'class_name': 'salmon',
+    'category': '',
+    'states': []
+}
 # Add an edge
-new_edge = {'from_id': 327, 'to_id': fridge_node['id'], 'relation_type': 'INSIDE'}
-# graph['nodes'].append(new_node)
+new_edge = {'from_id': 1000, 'to_id': fridge_node['id'], 'relation_type': 'INSIDE'}
+graph['nodes'].append(new_node)
 graph['edges'].append(new_edge)
-
-# update the environment
 comm.expand_scene(graph)
-
 comm.add_camera(position=[-3.2, 2, -5], rotation=[10, 15, 0])
 modes = ['normal', 'seg_class', 'surf_normals']
 images = []
