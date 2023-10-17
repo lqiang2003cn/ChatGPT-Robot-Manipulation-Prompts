@@ -157,6 +157,7 @@ if __name__ == "__main__":
         help='scenario name (see the code for details)')
     args = parser.parse_args()
     scenario_name = args.scenario
+    instructions = None
     # 1. example of moving objects on the table and the shelf
     if scenario_name == 'shelf':
         environment = {

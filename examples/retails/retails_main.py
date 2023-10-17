@@ -30,11 +30,6 @@ class ChatGPT:
         self.last_response_raw = None
         self.query = ''
         self.instruction = ''
-        # load prompt file
-        fp_system = os.path.join(dir_system, 'system.txt')
-        with open(fp_system) as fb:
-            data = fb.read()
-        self.system_message = {"role": "system", "content": data}
 
         for prompt_name in prompt_load_order_param:
             fp_prompt = os.path.join(dir_prompt, prompt_name + '.txt')
@@ -49,22 +44,21 @@ class ChatGPT:
                     self.messages.append({"sender": "user", "text": item})
                 else:
                     self.messages.append({"sender": "assistant", "text": item})
-        fp_query = os.path.join(dir_query, 'query.txt')
+
+        fp_query = os.path.join(dir_prompt, 'query.txt')
         with open(fp_query) as fb:
             self.query = fb.read()
 
     def create_prompt(self):
-        prompt = [self.system_message]
+        prompt = []
         for message in self.messages:
-            prompt.append(
-                {"role": message['sender'], "content": message['text']})
+            prompt.append({"role": message['sender'], "content": message['text']})
         prompt_content = ""
         for message in prompt:
             prompt_content += message["content"]
 
-        print('prompt length: ' + str(len(enc.encode(prompt_content))))
-        if len(enc.encode(prompt_content)) > self.max_token_length - \
-                self.max_completion_length:
+        # print('prompt length: ' + str(len(enc.encode(prompt_content))))
+        if len(enc.encode(prompt_content)) > self.max_token_length - self.max_completion_length:
             print('prompt too long. truncated.')
             # truncate the prompt by removing the oldest two messages
             self.messages = self.messages[2:]
@@ -72,6 +66,12 @@ class ChatGPT:
         return prompt
 
     def generate(self, message, environment_param, is_user_feedback=False):
+        # Remove unsafe user inputs. May need further refinement in the future.
+        if message.find('<|im_start|>') != -1:
+            message = message.replace('<|im_start|>', '')
+        if message.find('<|im_end|>') != -1:
+            message = message.replace('<|im_end|>', '')
+
         if is_user_feedback:
             self.messages.append({'sender': 'user', 'text': message})
         else:
@@ -83,10 +83,12 @@ class ChatGPT:
                 self.instruction = text_base
             self.messages.append({'sender': 'user', 'text': text_base})
 
+        prompt = self.create_prompt()
+
         json_data = {
             "model": "gpt-3.5-turbo-16k-0613",
-            'messages': self.create_prompt(),
-            "temperature": 2.0,
+            'messages': prompt,
+            "temperature": 0.0,
             "max_tokens": self.max_completion_length,
             "top_p": 0.5,
             "frequency_penalty": 0.0,
@@ -105,7 +107,6 @@ class ChatGPT:
         self.last_response = self.last_response.replace("'", "\"")
         try:
             self.json_dict = json.loads(self.last_response, strict=False)
-            self.environment = self.json_dict["environment_after"]
         except BaseException as e:
             print(e)
             self.json_dict = None
@@ -117,31 +118,28 @@ if __name__ == '__main__':
     enc = tiktoken.get_encoding("cl100k_base")
     with open('c.json') as f:
         credentials = json.load(f)
-    dir_system = './system'
     dir_prompt = './prompt'
-    dir_query = './query'
-    prompt_load_order = ['prompt_role',
-                         'prompt_function',
-                         'prompt_environment',
-                         'prompt_output_format',
-                         'prompt_example']
+    prompt_load_order = ['prompt_role']
     dir_name = "output"
     environment = ['juice', 'water', 'cola', 'cookie', 'bread']
-    instruction = input('customer input:')
+    # instruction = input('customer input:')
+    instruction = "i am thirsty"
     aimodel = ChatGPT(credentials, prompt_load_order)
     text = aimodel.generate(instruction, environment, is_user_feedback=False)
+    print(text)
     while True:
+        if text['state'] == 'succeed':
+            print('sold')
+            break
+
         user_feedback = input('user feedback (return empty if satisfied): ')
-        if user_feedback == 'q':
-            print('exit')
-            exit()
+        # user_feedback = 'No'
         if user_feedback != '':
-            print('not empty user feedback')
             text = aimodel.generate(user_feedback, environment, is_user_feedback=True)
+            print(text)
+            print('c')
         else:
-            # update the current environment
-            print('update environment')
-            environment = aimodel.environment
+            print('user quit')
             break
 
 # if __name__ == '__main__':

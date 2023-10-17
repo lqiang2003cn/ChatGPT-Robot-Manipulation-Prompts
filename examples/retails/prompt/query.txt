@@ -1,0 +1,7 @@
+Start working. Items on the menu is:
+"""
+{"menu":[ENVIRONMENT]}
+"""
+The customer says the following:
+"""
+{"customer_words": [INSTRUCTION]}
