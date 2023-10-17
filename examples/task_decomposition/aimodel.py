@@ -1,4 +1,3 @@
-import openai
 import tiktoken
 import json
 import os
