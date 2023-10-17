@@ -249,10 +249,7 @@ if __name__ == "__main__":
         os.makedirs('./out/' + scenario_name)
     for i, instruction in enumerate(instructions):
         print(json.dumps(environment))
-        text = aimodel.generate(
-            instruction,
-            environment,
-            is_user_feedback=False)
+        text = aimodel.generate(instruction, environment, is_user_feedback=False)
         while True:
             user_feedback = input(
                 'user feedback (return empty if satisfied): ')
