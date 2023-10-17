@@ -4,11 +4,13 @@
 
 import speech_recognition as sr
 
+
 # obtain audio from the microphone
 r = sr.Recognizer()
+# r.pause_threshold = 5
 with sr.Microphone() as source:
     print("Say something!")
-    audio = r.listen(source, timeout=5)
+    audio = r.listen(source, timeout=4)
 
 # write audio to a RAW file
 # with open("microphone-results.raw", "wb") as f:
