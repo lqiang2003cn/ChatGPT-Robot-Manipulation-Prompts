@@ -127,6 +127,8 @@ if __name__ == '__main__':
     aimodel = ChatGPT(credentials, prompt_load_order)
     text = aimodel.generate(instruction, environment, is_user_feedback=False)
     print(text)
+
+    # collect order
     while True:
         if text['state'] == 'succeed':
             print('sold')
@@ -141,6 +143,9 @@ if __name__ == '__main__':
         else:
             print('user quit')
             break
+
+    # now,
+
 
 # if __name__ == '__main__':
 #     dir_name = "output"

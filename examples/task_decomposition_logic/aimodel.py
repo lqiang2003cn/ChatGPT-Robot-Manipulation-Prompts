@@ -177,7 +177,7 @@ if __name__ == "__main__":
                 "<spam>": "on_something(<table>)",
                 "<juice>": "on_something(<shelf_bottom>)"}}
         instructions = [
-            'Take the spam, and throw it away if the our-of-date date is expired. Otherwise, put it on the shelf.']
+            'Take the spam, and throw it away if the out-of-date date is expired. Otherwise, put it on the shelf.']
     else:
         parser.error('Invalid scenario name:' + scenario_name)
 
