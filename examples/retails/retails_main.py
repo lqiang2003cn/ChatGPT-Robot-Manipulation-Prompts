@@ -34,7 +34,6 @@ class ChatGPT:
         self.mc = model_config
         self.json_dict = None
         self.environment = None
-        self.credentials = model_config.credentials
         self.messages = []
         self.max_token_length = 15000  # 4000
         self.max_completion_length = 2000  # 1300
@@ -44,7 +43,7 @@ class ChatGPT:
         self.instruction = ''
 
         for prompt_name in self.mc.prompt_load_order:
-            fp_prompt = os.path.join(self.mc.dir_prompt, prompt_name + '.txt')
+            fp_prompt = os.path.join(self.mc.dir_prompt, prompt_name)
             with open(fp_prompt) as fb:
                 data = fb.read()
             data_split = re.split(r'\[user]\n|\[assistant]\n', data)
@@ -57,7 +56,7 @@ class ChatGPT:
                 else:
                     self.messages.append({"sender": "assistant", "text": item})
 
-        fp_query = os.path.join(self.mc.dir_prompt, 'query.txt')
+        fp_query = os.path.join(self.mc.dir_prompt, self.mc.prompt_query)
         with open(fp_query) as fb:
             self.query = fb.read()
 
@@ -106,10 +105,10 @@ class ChatGPT:
             "frequency_penalty": 0.0,
             "presence_penalty": 0.0,
         }
-        headers = {"Authorization": "Bearer " + self.credentials["api_key"]}
+        headers = {"Authorization": "Bearer " + self.mc.credentials["api_key"]}
         session = requests.Session()
         # session.trust_env = False
-        response = session.post(self.credentials["api_base"], headers=headers, json=json_data).json()
+        response = session.post(self.mc.credentials["api_base"], headers=headers, json=json_data).json()
         text_response = response['choices'][0]['message']['content']
         self.last_response_raw = text_response
         self.messages.append({"sender": "assistant", "text": self.last_response_raw})
@@ -142,7 +141,23 @@ def collect_order(mc_p, instruction_p, environment_p):
         if user_feedback != '':
             text = aimodel.generate(user_feedback, environment, is_user_feedback=True)
             print(text)
-            print('c')
+        else:
+            print('user quit')
+            break
+
+    return text['item']
+
+
+def task_breakdown(mc_p, instruction_p, environment_p):
+    aimodel = ChatGPT(mc_p)
+    text = aimodel.generate(instruction_p, environment_p, is_user_feedback=False)
+    print(text)
+
+    while True:
+        user_feedback = ''
+        if user_feedback != '':
+            text = aimodel.generate(user_feedback, environment_p, is_user_feedback=True)
+            print(text)
         else:
             print('user quit')
             break
@@ -151,7 +166,7 @@ def collect_order(mc_p, instruction_p, environment_p):
 
 
 if __name__ == '__main__':
-    encoder = tiktoken.get_encoding("cl100k_base")
+    enc = tiktoken.get_encoding("cl100k_base")
 
     # model config for order collection
     mc_order = ModelConfig()
@@ -161,11 +176,34 @@ if __name__ == '__main__':
     mc_order.prompt_query = 'order_query.txt'
     with open('c.json') as f:
         mc_order.credentials = json.load(f)
-    mc_order.encoder = encoder
+    mc_order.encoder = enc
 
-    environment = {'items': ['juice', 'water', 'cola', 'cookie', 'bread']}
-    instruction = 'i am thirsty'
-    collected_item = collect_order(mc_order, instruction, environment)
+    # collection order
+    # order_environment = {'items': ['juice', 'water', 'cola', 'cookie', 'bread']}
+    # order_instr = 'i am thirsty'
+    # collected_item = collect_order(mc_order, order_instr, order_environment)
+
+    # task config for task breakdown
+    mc_task = ModelConfig()
+    mc_task.dir_prompt = 'prompt'
+    mc_task.dir_output = "output"
+    mc_task.prompt_load_order = [
+        'task_1_role.txt',
+        'task_2_action.txt',
+        'task_3_env.txt',
+        'task_4_output.txt',
+        'task_5_output.txt'
+    ]
+    mc_task.prompt_query = 'task_6_query.txt'
+    with open('c.json') as f:
+        mc_task.credentials = json.load(f)
+    mc_task.encoder = enc
+
+    # task breakdown
+    task_environment = {'items': ['juice', 'water', 'cola', 'cookie', 'bread']}
+    collected_item = 'juice'
+    task_instr = 'pickup the ' + str(collected_item)
+    task_breakdown(mc_task, task_instr, task_environment)
 
 # if __name__ == '__main__':
 #     dir_name = "output"

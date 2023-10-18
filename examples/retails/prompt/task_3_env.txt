@@ -1,0 +1,13 @@
+[user]
+Information about environments and objects are given as python dictionary. Example:
+"""
+{
+    "environment": {
+        "items": ["apple", "juice", "cookie"]
+    }
+}
+"""
+-------------------------------------------------------
+The texts above are part of the overall instruction. Do not start working yet:
+[assistant]
+Understood. I will wait for further instructions before starting to work.
