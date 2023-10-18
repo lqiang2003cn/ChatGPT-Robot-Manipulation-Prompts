@@ -3,9 +3,9 @@ Necessary and sufficient robotic actions are defined as follows:
 """
 "ROBOTIC ACTION LIST"
 
-- move_hand(arg1): Move the robot hand to position specified by arg1.
-- grasp_object(arg1): Grab the object specified by arg1.
-- release_object(arg1): Release the object specified by arg1
+- move_arm(arg1): move the robot arm to the position specified by arg1.
+- close_gripper(): close the robot's gripper
+- open_gripper(): open the robot's gripper
 
 """
 -------------------------------------------------------
