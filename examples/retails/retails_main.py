@@ -6,6 +6,17 @@ import requests
 import tiktoken
 
 
+class ModelConfig:
+
+    def __init__(self):
+        self.dir_prompt = None
+        self.dir_output = None
+        self.prompt_load_order = None
+        self.prompt_query = None
+        self.credentials = None
+        self.encoder = None
+
+
 def extract_json_part(text_param):
     # because the json part is in the middle of the text, we need to extract it.
     # json part is between ```python and ```.
@@ -19,10 +30,11 @@ def extract_json_part(text_param):
 
 
 class ChatGPT:
-    def __init__(self, credentials_param, prompt_load_order_param):
+    def __init__(self, model_config: ModelConfig):
+        self.mc = model_config
         self.json_dict = None
         self.environment = None
-        self.credentials = credentials_param
+        self.credentials = model_config.credentials
         self.messages = []
         self.max_token_length = 15000  # 4000
         self.max_completion_length = 2000  # 1300
@@ -31,8 +43,8 @@ class ChatGPT:
         self.query = ''
         self.instruction = ''
 
-        for prompt_name in prompt_load_order_param:
-            fp_prompt = os.path.join(dir_prompt, prompt_name + '.txt')
+        for prompt_name in self.mc.prompt_load_order:
+            fp_prompt = os.path.join(self.mc.dir_prompt, prompt_name + '.txt')
             with open(fp_prompt) as fb:
                 data = fb.read()
             data_split = re.split(r'\[user]\n|\[assistant]\n', data)
@@ -45,7 +57,7 @@ class ChatGPT:
                 else:
                     self.messages.append({"sender": "assistant", "text": item})
 
-        fp_query = os.path.join(dir_prompt, 'query.txt')
+        fp_query = os.path.join(self.mc.dir_prompt, 'query.txt')
         with open(fp_query) as fb:
             self.query = fb.read()
 
@@ -58,7 +70,7 @@ class ChatGPT:
             prompt_content += message["content"]
 
         # print('prompt length: ' + str(len(enc.encode(prompt_content))))
-        if len(enc.encode(prompt_content)) > self.max_token_length - self.max_completion_length:
+        if len(self.mc.encoder.encode(prompt_content)) > self.max_token_length - self.max_completion_length:
             print('prompt too long. truncated.')
             # truncate the prompt by removing the oldest two messages
             self.messages = self.messages[2:]
@@ -114,28 +126,19 @@ class ChatGPT:
         return self.json_dict
 
 
-if __name__ == '__main__':
-    enc = tiktoken.get_encoding("cl100k_base")
-    with open('c.json') as f:
-        credentials = json.load(f)
-    dir_prompt = './prompt'
-    prompt_load_order = ['prompt_role']
-    dir_name = "output"
-    environment = ['juice', 'water', 'cola', 'cookie', 'bread']
-    # instruction = input('customer input:')
-    instruction = "i am thirsty"
-    aimodel = ChatGPT(credentials, prompt_load_order)
-    text = aimodel.generate(instruction, environment, is_user_feedback=False)
+def collect_order(mc_p, instruction_p, environment_p):
+    aimodel = ChatGPT(mc_p)
+    text = aimodel.generate(instruction_p, environment_p, is_user_feedback=False)
     print(text)
 
     # collect order
     while True:
         if text['state'] == 'succeed':
-            print('sold')
+            print('order collection succeeds')
             break
 
-        user_feedback = input('user feedback (return empty if satisfied): ')
-        # user_feedback = 'No'
+        # user_feedback = input('user feedback (return empty if satisfied): ')
+        user_feedback = 'OK'
         if user_feedback != '':
             text = aimodel.generate(user_feedback, environment, is_user_feedback=True)
             print(text)
@@ -144,8 +147,25 @@ if __name__ == '__main__':
             print('user quit')
             break
 
-    # now,
+    return text['item']
 
+
+if __name__ == '__main__':
+    encoder = tiktoken.get_encoding("cl100k_base")
+
+    # model config for order collection
+    mc_order = ModelConfig()
+    mc_order.dir_prompt = 'prompt'
+    mc_order.dir_output = "output"
+    mc_order.prompt_load_order = ['order_collect.txt']
+    mc_order.prompt_query = 'order_query.txt'
+    with open('c.json') as f:
+        mc_order.credentials = json.load(f)
+    mc_order.encoder = encoder
+
+    environment = {'items': ['juice', 'water', 'cola', 'cookie', 'bread']}
+    instruction = 'i am thirsty'
+    collected_item = collect_order(mc_order, instruction, environment)
 
 # if __name__ == '__main__':
 #     dir_name = "output"
