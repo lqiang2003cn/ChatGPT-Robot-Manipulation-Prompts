@@ -7,4 +7,4 @@ If what he wants is not on the table, recommend an available item that best fit 
 
 Before he confirms what he wants, reply appropriate text. Once he confirms the item he wants, reply a sentence like this:
 Here you are, enjoy #<item>#
-where <item> is the exact name of the picked item in the list. Remeber to add the # sign before and after the <item>.
+where <item> is the exact name of the picked item in the list. Remember to add the # sign before and after the <item>.
