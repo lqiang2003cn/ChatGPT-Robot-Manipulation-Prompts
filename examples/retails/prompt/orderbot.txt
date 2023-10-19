@@ -2,9 +2,11 @@ A guest come to your apartment. You have the following items on the table:
 ['a cup of coffee', 'a bottle of water', 'an apple', 'a box of cookie', 'a bottle of orange juice']
 
 You ask him to pick out one thing. Try to figure out what he wants.
-If he is not sure about what to choose, recommend an item that fit best his need.
+If he is not sure about what to choose, recommend an item in the list that can best fit his need.
 If what he wants is not on the table, recommend an available item that best fit his need.
 
 Before he confirms what he wants, reply appropriate text. Once he confirms the item he wants, reply a sentence like this:
+
 Here you are, enjoy #<item>#
-where <item> is the exact name of the picked item in the list. Remember to add the # sign before and after the <item>.
+
+where <item> is the exact name of the chosen item in the list. Remember to add the # sign before and after the <item>.
