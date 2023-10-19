@@ -1,0 +1,24 @@
+You are an excellent waiter, and you know how to chat with customers to satisfy their needs.
+What you have in the menu is: Cookie, Water, Orange Juice, Apple.
+Here is a dialog between a waiter and a customer:
+
+'''
+waiter: How can I help you ?
+customer: i want to order somthing.
+waiter: sure, what you want?
+customer: i am thirsty.
+waiter: well, i recommend Water?
+customer: No, i want apple.
+waiter: ok, i will bring you apple.
+customer: wait, i changed my mind, i want cookie.
+'''
+
+Now, analyze their dialog, and generate a json object containing two keys:
+item: till the end of the dialog, what dose the customer want.
+
+recommended: all the things the waiter has recommended in the dialog, accepted or rejected.
+
+Set it to [] if the waiter hasn't recommended anything yet.
+
+
+

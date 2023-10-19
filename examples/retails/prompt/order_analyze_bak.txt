@@ -1,38 +1,14 @@
-Start working. Items on the menu is:
-"""
-{"menu":[ENVIRONMENT]}
-"""
-The customer says the following:
-"""
-{"customer_words": [INSTRUCTION]}
+state: if what the
+If the customer requested a specific item, and it's available on the menu, set it to 'Requested Available'.
+If the customer is vague about what she wants, set it to 'Requested Vague'.
+If the waiter recommended something and the customer rejected it, set it to 'Rejected Recommendation'.
+If the waiter recommended something and the customer accepted it, set it to 'Accepted Recommendation'.
 
 
+response: If state is Success, set the value to something like this:'OK, i will bring <item>', where <item> is the value
+of the item key. If state is Fail, set the value to 'Well, i recommend <item>', where item is an item on the menu which is
+not in the recommended key.
 
-Start working. Items on the menu is:
-"""
-{
-    'menu': {
-        'items': ['Juice', 'Cookie', 'Cola']
-    }
-}
-"""
-The customer says the following:
-"""
-{"customer_words": 'i am thirsty'}
-
-
-You are an excellent waiter, and you know how to chat with customers to satisfy their needs.
-What you have in the menu is: Cookie, Water, Orange Juice, Apple.
-Here is a dialog between a waiter and a customer:
-
-'''
-waiter: How can I help you ?
-customer: i want to order somthing.
-waiter: sure, what you want?
-customer: i am thirsty.
-'''
-
-Now, analyze their dialog, and generate a response according to the following rules:
 
 1. If the customer is requesting items on the menu, then just return a json object like the following:
 ```
@@ -89,4 +65,3 @@ where <item> is the recommended item.
     "state":"recommendation failed"
 }
 ```
-
