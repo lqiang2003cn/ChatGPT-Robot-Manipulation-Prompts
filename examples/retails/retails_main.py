@@ -6,7 +6,6 @@ from examples.retails.utils import ModelConfig, task_breakdown
 
 if __name__ == '__main__':
     enc = tiktoken.get_encoding("cl100k_base")
-
     # model config for order collection
     # mc_order = ModelConfig()
     # mc_order.dir_prompt = 'prompt'
@@ -39,7 +38,7 @@ if __name__ == '__main__':
     mc_task.encoder = enc
 
     # task breakdown
-    task_environment = {'items': ['juice', 'water', 'cola', 'cookie', 'bread']}
+    task_environment = ['juice', 'water', 'cola', 'cookie', 'bread']
     collected_item = 'juice'
     task_instr = 'pickup the ' + str(collected_item)
     task_breakdown(mc_task, task_instr, task_environment)
