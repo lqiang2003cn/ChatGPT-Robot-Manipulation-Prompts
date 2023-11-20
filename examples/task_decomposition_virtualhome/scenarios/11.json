@@ -3,10 +3,10 @@
     "put the sponge in the sink and wet it with water"
   ],
   "program": [
-    "WalkTowards(<kitchencounter_238>)",
-    "Grab(<washingsponge_267>)",
+    "WalkTowards(<kitchentable_231>)",
+    "Grab(<washingsponge_266>)",
     "WalkTowards(<sink_247>)",
-    "Put(<washingsponge_267>, <sink_247>)",
-    "SwitchOn(<faucet_249>)"
+    "Put(<washingsponge_266>, <sink_247>)",
+    "SwitchOn(<faucet_248>)"
   ]
 }

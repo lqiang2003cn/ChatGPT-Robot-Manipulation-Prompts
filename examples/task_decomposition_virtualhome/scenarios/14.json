@@ -3,9 +3,9 @@
     "take the condiment bottle from the bookshelf and put it on the table"
   ],
   "program": [
-    "WalkTowards(<bookshelf_250>)",
-    "Grab(<condimentbottle_296>)",
+    "WalkTowards(<bookshelf_249>)",
+    "Grab(<condimentbottle_295>)",
     "WalkTowards(<kitchentable_231>)",
-    "Put(<condimentbottle_296>, <kitchentable_231>)"
+    "Put(<condimentbottle_295>, <kitchentable_231>)"
   ]
 }

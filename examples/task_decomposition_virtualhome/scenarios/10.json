@@ -4,11 +4,11 @@
   ],
   "program": [
     "WalkTowards(<kitchentable_231>)",
-    "Grab(<pie_320>)",
-    "WalkTowards(<stove_312>)",
-    "Open(<stove_312>)",
-    "Putin(<pie_320>, <stove_312>)",
-    "Close(<stove_312>)",
-    "SwitchOn(<stove_312>)"
+    "Grab(<pie_319>)",
+    "WalkTowards(<stove_311>)",
+    "Open(<stove_311>)",
+    "Putin(<pie_319>, <stove_311>)",
+    "Close(<stove_311>)",
+    "SwitchOn(<stove_311>)"
   ]
 }

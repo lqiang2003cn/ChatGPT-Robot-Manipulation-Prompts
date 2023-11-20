@@ -4,8 +4,8 @@
   ],
   "program": [
     "WalkTowards(<kitchentable_231>)",
-    "Grab(<cutleryknife_284>)",
+    "Grab(<cutleryknife_283>)",
     "WalkTowards(<kitchentable_231>)",
-    "Put(<cutleryknife_284>, <kitchentable_231>)"
+    "Put(<cutleryknife_283>, <kitchentable_231>)"
   ]
 }

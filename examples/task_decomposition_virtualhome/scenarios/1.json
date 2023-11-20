@@ -3,9 +3,9 @@
     "take the bread from the toaster on the kitchen counter and place it on the plate on the table"
   ],
   "program": [
-    "WalkTowards(<toaster_309>)",
-    "Grab(<breadslice_311>)",
+    "WalkTowards(<toaster_308>)",
+    "Grab(<breadslice_309>)",
     "WalkTowards(<kitchentable_231>)",
-    "Put(<breadslice_311>, <plate_286>)"
+    "Put(<breadslice_309>, <plate_285>)"
   ]
 }
