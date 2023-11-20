@@ -8,8 +8,8 @@ import tiktoken
 from virtualhome.simulation.unity_simulator.comm_unity import UnityCommunication
 
 enc = tiktoken.get_encoding("cl100k_base")
-with open('c.json') as f:
-    credentials = json.load(f)
+# with open('c.json') as f:
+#     credentials = json.load(f)
 
 dir_system = './system'
 dir_prompt = './prompt'
@@ -22,8 +22,9 @@ prompt_load_order = ['prompt_role',
 
 
 def reset(comm, scene_index=None):
-    response = comm.post_command({'id': str(time.time()), 'action': 'reset', 'intParams': [
-    ] if scene_index is None else [scene_index]})
+    response = comm.post_command(
+        {'id': str(time.time()), 'action': 'reset', 'intParams': [] if scene_index is None else [scene_index]}
+    )
     return response['success']
 
 
@@ -396,7 +397,7 @@ def t_execution(comm, script):
 
 if __name__ == '__main__':
     comm = UnityCommunication()
-    reset(comm)
+    reset(comm, 1)
     # comm.reset(1)
     dir_name = "out_task_planning_gpt-3.5-turbo-16k_temp=2.0"
     waittime_sec = 30
