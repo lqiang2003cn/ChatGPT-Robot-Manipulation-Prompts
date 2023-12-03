@@ -1,15 +1,15 @@
 import json
 import os
-import re
 import time
 
-import requests
 import tiktoken
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
 from virtualhome.simulation.unity_simulator.comm_unity import UnityCommunication
 
+import prompt.prompts as pt
+
 enc = tiktoken.get_encoding("cl100k_base")
-# with open('c.json') as f:
-#     credentials = json.load(f)
 
 dir_system = './system'
 dir_prompt = './prompt'
@@ -65,12 +65,12 @@ def remove_brackets(name):
     return name.replace('<', '').replace('>', '')
 
 
-def which_room(graph, node_id):
+def which_room(graph_param, node_id):
     # Create a mapping from each node ID to its corresponding node data
-    id_to_node = {node['id']: node for node in graph['nodes']}
+    id_to_node = {node['id']: node for node in graph_param['nodes']}
     # Create a mapping from child node ID to its parent node ID
     child_to_parent = {}
-    for edge in graph['edges']:
+    for edge in graph_param['edges']:
         if edge['from_id'] in child_to_parent.keys():
             child_to_parent[edge['from_id']].append(
                 (edge['to_id'], edge['relation_type']))
@@ -91,17 +91,17 @@ def which_room(graph, node_id):
     return None
 
 
-def find_parent_node(graph, node_name, room_name):
+def find_parent_node(graph_param, node_name, room_name):
     # Create a mapping from each node ID to its corresponding node data
-    id_to_node = {node['id']: node for node in graph['nodes']}
+    id_to_node = {node['id']: node for node in graph_param['nodes']}
     name_to_id = {}
-    for node in graph['nodes']:
+    for node in graph_param['nodes']:
         if node['class_name'] in name_to_id.keys():
             name_to_id[node['class_name']].append(node['id'])
         else:
             name_to_id[node['class_name']] = [node['id']]
     child_to_parent = {}
-    for edge in graph['edges']:
+    for edge in graph_param['edges']:
         if edge['from_id'] in child_to_parent.keys():
             child_to_parent[edge['from_id']].append(
                 (edge['to_id'], edge['relation_type']))
@@ -117,7 +117,7 @@ def find_parent_node(graph, node_name, room_name):
             return None
         node_ids = name_to_id[node_name]
         # print(node_ids)
-        node_ids = [node_id for node_id in node_ids if which_room(graph, node_id) == room_name]
+        node_ids = [node_id for node_id in node_ids if which_room(graph_param, node_id) == room_name]
         # print(node_ids)
     return_dict = {"object_states": {}, "asset_states": {}}
     for node_id in node_ids:
@@ -151,25 +151,25 @@ def find_parent_node(graph, node_name, room_name):
     return return_dict
 
 
-def populate_environment(graph, start_objects, start_room):
-    environment = {
+def populate_environment(graph_param, start_objects, start_room):
+    environment_result = {
         "assets": [],
         "asset_states": {},
         "objects": [],
         "object_states": {},
     }
     # Create a mapping from each node ID to its corresponding node data
-    id_to_node = {node['id']: node for node in graph['nodes']}
-    # note that there are multiple nodes with the same name
+    id_to_node = {node['id']: node for node in graph_param['nodes']}
+    # note that there are multiple nodes with the same class name
     name_to_id = {}
-    for node in graph['nodes']:
+    for node in graph_param['nodes']:
         if node['class_name'] in name_to_id.keys():
             name_to_id[node['class_name']].append(node['id'])
         else:
             name_to_id[node['class_name']] = [node['id']]
     # Create a mapping from child node ID to its parent node ID
     child_to_parent = {}
-    for edge in graph['edges']:
+    for edge in graph_param['edges']:
         if edge['from_id'] in child_to_parent.keys():
             child_to_parent[edge['from_id']].append((edge['to_id'], edge['relation_type']))
         else:
@@ -179,33 +179,33 @@ def populate_environment(graph, start_objects, start_room):
     while objects_to_check:
         current_object = objects_to_check.pop()
         # print(objects_to_check)
-        if "<{}>".format(current_object) not in environment["objects"] and \
-                "<{}>".format(current_object) not in environment["assets"]:
+        if "<{}>".format(current_object) not in environment_result["objects"] and \
+                "<{}>".format(current_object) not in environment_result["assets"]:
             # add to the environment
             if 'GRABBABLE' in id_to_node[int(current_object.split('_')[-1])]['properties']:
-                environment["objects"].append("<{}>".format(current_object))
+                environment_result["objects"].append("<{}>".format(current_object))
             else:
-                environment["assets"].append("<{}>".format(current_object))
+                environment_result["assets"].append("<{}>".format(current_object))
 
             # find the parent and add the relationship to the environment
-            parent_info = find_parent_node(graph, remove_brackets(current_object), start_room)
+            parent_info = find_parent_node(graph_param, remove_brackets(current_object), start_room)
             if parent_info is not None:
                 if "object_states" in parent_info:
                     for obj, states in parent_info["object_states"].items():
                         # add states to the environment
-                        environment["object_states"]["<{}>".format(remove_brackets(obj))] = ["{}(<{}>)".format(
+                        environment_result["object_states"]["<{}>".format(remove_brackets(obj))] = ["{}(<{}>)".format(
                             state.split('(')[0], remove_brackets(state.split('(')[-1].split(')')[0])) for state in states]
                         # add the new objects involved in the states to the
                         # list of objects to check
                         for state in states:
                             involved_object = remove_brackets(state.split('(')[-1].split(')')[0])
-                            if "<{}>".format(involved_object) not in environment["objects"] and \
-                                    "<{}>".format(involved_object) not in environment["assets"]:
+                            if "<{}>".format(involved_object) not in environment_result["objects"] and \
+                                    "<{}>".format(involved_object) not in environment_result["assets"]:
                                 objects_to_check.append(involved_object)
                 if "asset_states" in parent_info:
                     for obj, states in parent_info["asset_states"].items():
                         # add states to the environment
-                        environment["asset_states"]["<{}>".format(remove_brackets(obj))] = [
+                        environment_result["asset_states"]["<{}>".format(remove_brackets(obj))] = [
                             "{}(<{}>)".format(state.split('(')[0], remove_brackets(state.split('(')[-1].split(')')[0])) for state
                             in states
                         ]
@@ -215,12 +215,12 @@ def populate_environment(graph, start_objects, start_room):
                             # remove brackets while keeping the ID
                             involved_asset = remove_brackets(state.split(
                                 '(')[-1].split(')')[0])  # remove the ID and brackets
-                            if "<{}>".format(involved_asset) not in environment["assets"] and "<{}>".format(
-                                    involved_asset) not in environment["objects"]:
+                            if "<{}>".format(involved_asset) not in environment_result["assets"] and "<{}>".format(
+                                    involved_asset) not in environment_result["objects"]:
                                 objects_to_check.append(involved_asset)
     # want to add 'object_properties' to the environment
     asset_properties = {}
-    for asset in environment['asset_states']:
+    for asset in environment_result['asset_states']:
         asset_id = asset.strip('>').strip('<').split('_')[1]
         tmp_properties = []
         if "CAN_OPEN" in id_to_node[int(asset_id)]['properties']:
@@ -228,9 +228,9 @@ def populate_environment(graph, start_objects, start_room):
         else:
             tmp_properties.append("NOT_OPENABLE")
         asset_properties[asset] = tmp_properties
-    environment['asset_properties'] = asset_properties
+    environment_result['asset_properties'] = asset_properties
     object_properties = {}
-    for obj in environment['object_states']:
+    for obj in environment_result['object_states']:
         obj_id = obj.strip('>').strip('<').split('_')[1]
         tmp_properties = []
         if "CAN_OPEN" in id_to_node[int(obj_id)]['properties']:
@@ -238,12 +238,12 @@ def populate_environment(graph, start_objects, start_room):
         else:
             tmp_properties.append("NOT_OPENABLE")
         object_properties[obj] = tmp_properties
-    environment['object_properties'] = object_properties
-    return environment
+    environment_result['object_properties'] = object_properties
+    return environment_result
 
 
-def find_unique_objects(graph, object_name, start_room):
-    hit_object = find_parent_node(graph, object_name, start_room)
+def find_unique_objects(graph_param, object_name, start_room):
+    hit_object = find_parent_node(graph_param, object_name, start_room)
     if hit_object is None:
         return []
     if len(hit_object['object_states']) > 0:
@@ -256,9 +256,9 @@ def find_unique_objects(graph, object_name, start_room):
     return list(object_list)
 
 
-def extract_objects(script):
+def extract_objects(script_param):
     objects_all = []
-    for action in script:
+    for action in script_param:
         parts = action.split('(')
         arguments = parts[1].replace(" ", "").strip(')')
         # Check if there are any objects
@@ -270,139 +270,82 @@ def extract_objects(script):
     return list(set(objects_all))
 
 
-class ChatGPT_api:
-    def __init__(self, credentials, prompt_load_order):
-        self.credentials = credentials
+class ChatGPTAgent:
+    def __init__(self):
+        self.json_dict = None
+        self.environment = None
         self.messages = []
         self.max_token_length = 15000  # 4000
         self.max_completion_length = 2000  # 1300
-        self.last_response = None
-        self.last_response_raw = None
-        self.query = ''
         self.instruction = ''
-        # load prompt file
-        fp_system = os.path.join(dir_system, 'system.txt')
-        with open(fp_system) as f:
-            data = f.read()
-        self.system_message = {"role": "system", "content": data}
+        self.comm = UnityCommunication()
 
-        for prompt_name in prompt_load_order:
-            fp_prompt = os.path.join(dir_prompt, prompt_name + '.txt')
-            with open(fp_prompt) as f:
-                data = f.read()
-            data_spilit = re.split(r'\[user\]\n|\[assistant\]\n', data)
-            data_spilit = [item for item in data_spilit if len(item) != 0]
-            # it start with user and ends with system
-            assert len(data_spilit) % 2 == 0
-            for i, item in enumerate(data_spilit):
-                if i % 2 == 0:
-                    self.messages.append({"sender": "user", "text": item})
-                else:
-                    self.messages.append({"sender": "assistant", "text": item})
-        fp_query = os.path.join(dir_query, 'query.txt')
-        with open(fp_query) as f:
-            self.query = f.read()
+        # langchain implementation
+        self.messages_pt = ChatPromptTemplate.from_messages([
+            ('system', pt.system_prompt),
+            ('human', pt.role_prompt_user),
+            ('ai', pt.role_prompt_ai),
+            ('human', pt.function_prompt_user),
+            ('ai', pt.function_prompt_ai),
+            ('human', pt.env_prompt_user),
+            ('ai', pt.env_prompt_ai),
+            ('human', pt.output_format_prompt_user),
+            ('ai', pt.output_format_prompt_ai),
+            ('human', pt.example_prompt_user),
+            ('ai', pt.example_prompt_ai),
+            ('human', pt.query_prompt_user)
+        ])
+        self.llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-1106")
+        self.chain = self.messages_pt | self.llm
+        self.responses = {}
 
-    def create_prompt(self):
-        prompt = [self.system_message]
-        for message in self.messages:
-            prompt.append(
-                {"role": message['sender'], "content": message['text']})
-        prompt_content = ""
-        for message in prompt:
-            prompt_content += message["content"]
-
-        print('prompt length: ' + str(len(enc.encode(prompt_content))))
-        if len(enc.encode(prompt_content)) > self.max_token_length - \
-                self.max_completion_length:
-            print('prompt too long. truncated.')
-            # truncate the prompt by removing the oldest two messages
-            self.messages = self.messages[2:]
-            prompt = self.create_prompt()
-        return prompt
-
-    def extract_json_part(self, text):
-        # because the json part is in the middle of the text, we need to extract it.
-        # json part is between ```python and ```.
-        # skip if there is no json part
-        if text.find('```python') == -1:
-            return text
-        text_json = text[text.find(
-            '```python') + len('```python'):text.find('\n```')]
-        text_json.replace('```', '')
-        return text_json
-
-    def generate(self, message, environment, is_user_feedback=False):
+    def generate(self, curr_instruction, curr_env, is_user_feedback=False):
         if is_user_feedback:
-            self.messages.append({'sender': 'user',
-                                  'text': message})
-        else:
-            text_base = self.query
-            if text_base.find('[ENVIRONMENT]') != -1:
-                text_base = text_base.replace(
-                    '[ENVIRONMENT]', json.dumps(environment))
-            if text_base.find('[INSTRUCTION]') != -1:
-                text_base = text_base.replace('[INSTRUCTION]', message)
-                self.instruction = text_base
-            self.messages.append({'sender': 'user', 'text': text_base})
-
-        json_data = {
-            "model": "gpt-3.5-turbo-16k-0613",
-            'messages': self.create_prompt(),
-            "temperature": 2.0,
-            "max_tokens": self.max_completion_length,
-            "top_p": 0.5,
-            "frequency_penalty": 0.0,
-            "presence_penalty": 0.0,
+            self.messages_pt.append(('humane', curr_instruction))
+        variables = {
+            "env_prompt_user_example": pt.env_prompt_user_example,
+            "example_prompt_user_example_input": pt.example_prompt_user_example_input,
+            "example_prompt_user_example_output": pt.example_prompt_user_example_output,
+            "curr_env": curr_env,
+            "curr_instruction": curr_instruction
         }
-        headers = {"Authorization": "Bearer " + self.credentials["api_key"]}
-        session = requests.Session()
-        # session.trust_env = False
-        response = session.post(
-            self.credentials["api_base"],
-            headers=headers,
-            json=json_data
-        ).json()
+        variables.update(self.responses)
+        curr_messages = self.messages_pt.format_messages(**variables)
+        for m in curr_messages:
+            print('####################################', m.type, '####################################\n', m.content)
+        response = self.chain.invoke(variables)
 
-        text = response['choices'][0]['message']['content']
-        self.last_response_raw = text
-        self.messages.append({"sender": "assistant", "text": self.last_response_raw})
-        # analyze the response
-        self.last_response = text
-        self.last_response = self.extract_json_part(self.last_response)
-        self.last_response = self.last_response.replace("'", "\"")
+        response_num = "{response_" + str(len(self.responses)) + "}"
+        self.responses[response_num] = response.content
+        self.messages_pt.append(("ai", response_num))
         try:
-            self.json_dict = json.loads(self.last_response, strict=False)
+            self.json_dict = json.loads(response.content, strict=False)
             self.environment = self.json_dict["environment_after"]
-        except BaseException:
+        except BaseException as e:
+            print(e)
             self.json_dict = None
             return None
         return self.json_dict
 
-
-def t_execution(comm, script):
-    reset(comm)
-    print('Starting scene...')
-    comm.add_character('Chars/Male2', initial_room='kitchen')
-    for i, script_atom in enumerate(script):
-        task = text["task_cohesion"]["task_sequence"][i]
-        task_atom = script_atom.split("[")[1].split("]")[0]
-        ret = comm.render_script([script_atom], frame_rate=10, recording=True)
-        if ret[0] is False:
-            feedback = "You are wrong! Modify your answer. The following line failed in a simulator: " + task + "\n" + \
-                       "The verb {" + task_atom + "} is not applicable to the object(s). Refer to \'HUMAN ACTION LIST\' in my instruction."
-            return feedback
-    return None
+    def execution_script(self, script_param, result_param):
+        self.comm.reset(0)
+        print('Starting scene...')
+        self.comm.add_character('Chars/Male2', initial_room='kitchen')
+        for i, script_atom in enumerate(script_param):
+            task = result_param["task_cohesion"]["task_sequence"][i]
+            task_atom = script_atom.split("[")[1].split("]")[0]
+            ret = self.comm.render_script([script_atom], frame_rate=10, recording=True)
+            if ret[0] is False:
+                feedback = "You are wrong! Modify your answer. The following line failed in a simulator: " + task + "\n" + \
+                           "The verb {" + task_atom + "} is not applicable to the object(s). Refer to \'HUMAN ACTION LIST\' in my instruction."
+                return feedback
+        return None
 
 
 if __name__ == '__main__':
-    comm = UnityCommunication()
-    comm.reset(0)
-    # comm.reset(1)
     dir_name = "out_task_planning_gpt-3.5-turbo-16k_temp=2.0"
-    waittime_sec = 30
+    agent = ChatGPTAgent()
     max_trial = 5
-    time_api_called = time.time() - waittime_sec
     for scenario_id in range(1, 15):
         for trial_idx in range(max_trial):
             print(f"scenario_id={scenario_id}, trial_idx={trial_idx}")
@@ -416,62 +359,46 @@ if __name__ == '__main__':
             instructions = scenario['instructions']
             reference_program = scenario['program']
             print(f"instructions(scenario_id={scenario_id}): {instructions[0]}")
-            # reset(comm)
-            s, graph = comm.environment_graph()
 
-            # get info about bread slice
-            breadslice = [node['id'] for node in graph['nodes'] if node['class_name'] == 'breadslice']
-
+            s, graph = agent.comm.environment_graph()
             environment = populate_environment(graph, extract_objects(reference_program), "kitchen")
             scenario_name = 'scenario_' + str(scenario_id)
             if not os.path.exists('./' + dir_name + '/' + scenario_name):
                 os.makedirs('./' + dir_name + '/' + scenario_name)
-            while True:
-                # if api is called within 60 seconds, wait
-                current_time = time.time()
-                if current_time - time_api_called < waittime_sec:
-                    print("waiting for " + str(waittime_sec - (current_time - time_api_called)) + " seconds...")
-                    time.sleep(waittime_sec - (current_time - time_api_called))
-                aimodel = ChatGPT_api(credentials, prompt_load_order=prompt_load_order)
-                text = aimodel.generate(instructions[0], environment, is_user_feedback=False)
-                time_api_called = time.time()
-                if text is not None:
+
+            # for each instruction, retry until the response is json
+            max_retry_for_json = 5
+            retry_for_json = 1
+            result = agent.generate(instructions[0], environment, is_user_feedback=False)
+            while retry_for_json <= max_retry_for_json:
+                if result is not None:
                     break
                 else:
+                    retry_for_json += 1
                     print("api call failed. retrying...")
-                    current_time = time.time()
-                    if current_time - time_api_called < waittime_sec:
-                        print("waiting for " + str(waittime_sec - (current_time - time_api_called)) + " seconds...")
-                        time.sleep(waittime_sec - (current_time - time_api_called))
-                    text = aimodel.generate(
-                        "Your return cannot be interpreted as a valid json dictionary. Please reformat your response.",
-                        environment,
-                        is_user_feedback=True)
-                    break
-            if text is None:
-                dump_name = './' + dir_name + f'/{scenario_name}/note'
-                fp = os.path.join(dump_name + '.txt')
-                # In the file, note that the trial was skipped
-                with open(fp, 'w') as f:
-                    f.write(aimodel.last_response)
+                    msg = "Your return cannot be interpreted as a valid json dictionary. Please reformat your response."
+                    text = agent.generate(msg, environment, is_user_feedback=True)
+
+            if result is None:
                 continue
 
-            print("self test is running...")
-            script = generate_script(text["task_cohesion"]["task_sequence"])
-            user_feedback = t_execution(comm, script)
-            if len(user_feedback) > 0:
+            print("running scripts generated by AI...")
+            script = generate_script(result["task_cohesion"]["task_sequence"])
+            user_feedback = agent.execution_script(script, result)
+            if user_feedback is not None:
                 # VirtualHome sometimes fails to execute the script even if the
                 # script is correct, so retry once just in case.
-                user_feedback = t_execution(comm, script)
+                user_feedback = agent.execution_script(script, result)
             print('result of self test: ' + user_feedback)
+
             was_execution_successful = False
-            if len(user_feedback) > 0:
+            if user_feedback is not None:
                 was_execution_successful = False
             else:
                 was_execution_successful = True
             dump_name = './' + dir_name + f'/{scenario_name}/{trial_idx}'
             fp = os.path.join(dump_name + '.json')
-            aimodel.json_dict['was_execution_successful'] = was_execution_successful
-            aimodel.json_dict['user_feedback'] = user_feedback
+            agent.json_dict['was_execution_successful'] = was_execution_successful
+            agent.json_dict['user_feedback'] = user_feedback
             with open(fp, 'w') as f:
-                json.dump(aimodel.json_dict, f, indent=4)
+                json.dump(agent.json_dict, f, indent=4)
